@@ -29,105 +29,7 @@ $ErrorActionPreference = 'Stop'
 Set-Location 'C:\AdminDownloads\ForwardingAudit'
 $zip = 'exchange-forwarding-audit-v1.0.1.zip'
 $expected = (Get-Content -LiteralPath '.\release-sha256.txt' -Raw).Trim() -split '\s+', 2
-if ($expected.Count -ne 2 -or $expected[0] -notmatch '^[a-fA-F0-9]{64}
-
-- PowerShell 7.4 or later.
-- ExchangeOnlineManagement 3.9.2 or later, imported before running the launcher.
-- One direct, unprefixed Exchange Online connection to the expected tenant.
-- An Exchange role and mailbox scope that allow the queries listed in [README.txt](README.txt).
-
-Tested on Windows with PowerShell 7.6.9 and ExchangeOnlineManagement 3.9.2. These are this package's requirements, not Microsoft's minimum versions. GDAP, multiple connections, EOP-only sessions, on-premises Exchange and unattended authentication were not validated.
-
-Read-only code still needs permission to read the objects. Microsoft states that `Get-InboxRule` does not work with Global Reader or View-Only Organization Management. Ask your Exchange role administrator to review the commands and scope; do not grant Global Administrator just to run the tool.
-
-## Start with one mailbox
-
-Get your expected tenant ID independently from **Entra admin center > Entra ID > Overview**. Replace the example administrator, mailbox, GUID placeholder and local paths below.
-
-```powershell
-Import-Module ExchangeOnlineManagement -MinimumVersion 3.9.2
-Connect-ExchangeOnline -UserPrincipalName 'admin@contoso.com'
-Get-ConnectionInformation | Select-Object UserPrincipalName, TenantID, State
-
-Set-Location 'C:\AdminTools\ForwardingAudit'
-.\Get-ExternalForwardingAudit.ps1 `
-    -ExpectedTenantId 'YOUR-TENANT-GUID' `
-    -Mailbox 'pilot@contoso.com' `
-    -OutputDirectory 'C:\AdminReports\Forwarding'
-```
-
-Open `report.html` in the new run folder. Read the coverage status first, then cross-check the selected mailbox and Inbox rules in Exchange/Outlook. The placeholder GUID must be replaced; it is not a runnable tenant value.
-
-After the pilot, explicitly select all active user/shared mailboxes visible to your account:
-
-```powershell
-.\Get-ExternalForwardingAudit.ps1 `
-    -ExpectedTenantId 'YOUR-TENANT-GUID' `
-    -AllMailboxes `
-    -OutputDirectory 'C:\AdminReports\Forwarding'
-
-Disconnect-ExchangeOnline -Confirm:$false
-```
-
-The collector neither connects nor disconnects automatically. `-AllMailboxes` means mailboxes visible within your RBAC scope; it is not proof of complete tenant coverage.
-
-## Reports
-
-Each run creates its own folder. Reports are local and contain no external assets or scripts.
-
-| File | Purpose |
-| --- | --- |
-| `report.html` | Overview, findings, coverage and control context. |
-| `forwarding.csv` | One row per returned destination, including disabled rules and shadowed SMTP settings. |
-| `mailboxes.csv` | Per-mailbox status and interpretation. |
-| `coverage.csv` | Query results, counts, UTC start and error categories. |
-| `controls.csv` | Outbound spam policies/assignments, remote domains and transport rules. |
-| `rule-review.csv` | Unsupported or incomplete rule objects requiring separate review. |
-| `audit.json` | Structured selected values, preserving original strings. |
-
-**Zero findings is not a clean security verdict.** Failed queries, warnings, unsupported rules and unattempted reads remain visible. An enabled external candidate is a configured destination, not evidence of delivery or compromise.
-
-## Boundaries that matter
-
-- `ForwardingAddress` takes precedence over `ForwardingSmtpAddress`; the shadowed setting remains in the report.
-- Mail contacts and mail users can resolve to an external next hop. Groups are not expanded and downstream mailbox chains are not followed.
-- Accepted-domain destinations are not automatically safe.
-- Transport-rule actions are context, not part of the mailbox destination counter. The tool does not calculate effective per-message policy precedence.
-- Hidden Inbox rules are requested. The numeric result limit is 10,000; reaching it marks coverage incomplete. Unsupported rule objects are retained for review.
-- Recipient lookup failures and warnings count as incomplete. Repeated lookups reuse their recorded result within the run.
-- After throttling, later network reads are skipped and marked `NotAttempted`. Do not repeatedly rerun the script to force a response.
-- Power Automate flows and application-based access or forwarding are outside the inventory.
-
-## Verification and testing
-
-The read-only tenant retest on **11 November 2026** covered five user/shared mailboxes and returned 105 Inbox rule objects. No forwarding destinations were found in the interpretable data. Five unsupported hidden rules remained incomplete. No configuration was changed and delivery was not tested.
-
-Positive forwarding, recipient failures and throttling are exercised separately by **25 offline tests with synthetic data**. These tests are not evidence of those events occurring in the tenant.
-
-Run them from the repository root in a fresh PowerShell 7.4+ process:
-
-```powershell
-pwsh -NoProfile -File .\tests\Test-ExternalForwardingAudit.ps1
-```
-
-No Exchange connection, credentials, module download or Pester installation is needed. All Exchange query functions are mocked. Test output is written beneath `artifacts/`, which is ignored by Git.
-
-## Report a problem
-
-[Open an issue](https://github.com/TiagoSScarvalho/exchange-online-forwarding-audit/issues) with the tool/module/PowerShell versions, the affected operation and a synthetic reproduction where possible. Remove mailbox addresses, tenant IDs, rule IDs and sensitive policy conditions. Do not attach real reports or authentication output to a public issue.
-
-## Microsoft references
-
-- [Get-InboxRule and role limitations](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/get-inboxrule)
-- [Exchange Online cmdlet property sets](https://learn.microsoft.com/en-us/powershell/exchange/cmdlet-property-sets)
-- [Get-EXORecipient](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/get-exorecipient)
-- [Set-Mailbox forwarding properties](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-mailbox)
-- [Control automatic external forwarding](https://learn.microsoft.com/en-us/defender-office-365/outbound-spam-policies-external-email-forwarding)
-- [Find permissions required by Exchange cmdlets](https://learn.microsoft.com/en-us/powershell/exchange/find-exchange-cmdlet-permissions)
-- [Connect to Exchange Online PowerShell](https://learn.microsoft.com/en-us/powershell/exchange/connect-to-exchange-online-powershell)
-- [Exchange Team: automatic email forwarding](https://techcommunity.microsoft.com/blog/exchange/all-you-need-to-know-about-automatic-email-forwarding-in-exchange-online/2074888)
-
- -or $expected[1] -ne $zip) {
+if ($expected.Count -ne 2 -or $expected[0] -notmatch '^[a-fA-F0-9]{64}$' -or $expected[1] -ne $zip) {
     throw 'Unexpected ZIP checksum file. Check the release assets.'
 }
 if ((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash -ne $expected[0]) {
@@ -236,12 +138,6 @@ pwsh -NoProfile -File .\tests\Test-ExternalForwardingAudit.ps1
 ```
 
 No Exchange connection, credentials, module download or Pester installation is needed. All Exchange query functions are mocked. Test output is written beneath `artifacts/`, which is ignored by Git.
-
-To check a release ZIP, compare `Get-FileHash` with the separately downloaded `release-sha256.txt`. After extraction, `SHA256SUMS.txt` lists the four packaged source/documentation file hashes.
-
-```powershell
-Get-FileHash .\exchange-forwarding-audit-v1.0.1.zip -Algorithm SHA256
-```
 
 ## Report a problem
 
