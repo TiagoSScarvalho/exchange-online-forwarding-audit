@@ -11,6 +11,7 @@ By [Tiago Carvalho](https://www.tiagoscarvalho.com). Licensed under [MIT](LICENS
 - [Download the ready-to-run ZIP](https://github.com/TiagoSScarvalho/exchange-online-forwarding-audit/releases/download/v1.0.1/exchange-forwarding-audit-v1.0.1.zip)
 - [Release notes and checksum](https://github.com/TiagoSScarvalho/exchange-online-forwarding-audit/releases/tag/v1.0.1)
 - [Source code and tests for v1.0.1](https://github.com/TiagoSScarvalho/exchange-online-forwarding-audit/tree/v1.0.1)
+- [Walkthrough with tenant screenshots](https://www.tiagoscarvalho.com/exchange-online/external-forwarding-audit-powershell)
 - [Full operating guide](README.txt)
 - [Simulated report example](examples/README.md)
 
