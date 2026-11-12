@@ -1,0 +1,6 @@
+* text=auto
+Get-ExternalForwardingAudit.ps1 -text
+ExternalForwardingAudit.psm1 -text
+README.txt -text
+LICENSE.txt -text
+SHA256SUMS.txt -text

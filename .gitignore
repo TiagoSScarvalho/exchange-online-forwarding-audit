@@ -1,0 +1,11 @@
+artifacts/
+forwarding-audit/
+ForwardingAudit-Test/
+audit-*/
+private-evidence/
+*.zip
+*.pfx
+*.p12
+*.key
+.env
+.env.*
